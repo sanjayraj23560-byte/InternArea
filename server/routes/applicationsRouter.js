@@ -3,7 +3,7 @@ const router = express.Router()
 const Application = require('../models/applicationsModel')
 
 // ── 1. GET ALL APPLICATIONS (For Admin View) ──
-// Path: GET http://localhost:5000/api/job-applications/admin
+// Path: GET https://internarea-kuao.onrender.comapi/job-applications/admin
 router.get('/admin', async (req, res) => {
     try {
         // Fetch all user applications submitted across the platform
@@ -31,7 +31,7 @@ router.get('/', async (req, res) => {
 });
 
 // ── 3. UPDATE APPLICATION STATUS (Admin Accept / Reject Action) ──
-// Path: PUT http://localhost:5000/api/job-applications/:id/status
+// Path: PUT https://internarea-kuao.onrender.comapi/job-applications/:id/status
 router.put('/:id/status', async (req, res) => {
     try {
         const { id } = req.params;
