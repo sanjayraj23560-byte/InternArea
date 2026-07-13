@@ -73,7 +73,7 @@ router.post('/post', async (req, res) => {
 })
 
 // NOTE: kept as '/' to match your original mounting — this route only lines up
-// with the frontend's call to `${EXPRESS_API_URL}/verify-otp` if this router
+// with the frontend's call to `${process.env.NEXT_PUBLIC_API_URL}/verify-otp` if this router
 // is mounted at '/verify-otp' (or similar) in your main app.js, separately
 // from wherever '/otp' is mounted for /status and /post above. Double check
 // your app.js if this 404s.

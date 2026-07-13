@@ -37,7 +37,7 @@ function Applications() {
     const fetchAdminApplications = async () => {
         try {
             setLoading(true)
-            const res = await axios.get(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'}/api/job-applications/admin`)
+            const res = await axios.get(`${process.env.NEXT_PUBLIC_API_URL}/api/job-applications/admin`)
             if (Array.isArray(res.data)) {
                 setApplications(res.data)
             }

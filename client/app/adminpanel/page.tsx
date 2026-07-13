@@ -1,8 +1,6 @@
 'use client'
 import React from 'react'
 import { useRouter } from 'next/navigation'
-import Navbar from '@/components/Navbar'
-import Footer from '@/components/Footer'
 import { BiLeftArrow, BiLeftArrowAlt } from 'react-icons/bi'
 import { Mail, BriefcaseIcon, Send, UsersIcon, Settings, BarChart2, TrendingUp, TrendingDown } from 'lucide-react'
 

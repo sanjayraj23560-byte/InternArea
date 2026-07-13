@@ -12,8 +12,6 @@ import {
   Download, ArrowRight, Lock, Clock, Loader2, TimerReset, Paperclip, Pencil, X, Save
 } from 'lucide-react';
 
-const EXPRESS_API_URL = 'http://localhost:5000/api';
-
 export default function ResumeForm() {
   const { t } = useLanguage();
   const router = useRouter();
@@ -80,7 +78,7 @@ export default function ResumeForm() {
   const fetchExistingResume = async (email) => {
     setResumeLoading(true);
     try {
-      const res = await axios.post(`${EXPRESS_API_URL}/resume/get-resume`, { email });
+      const res = await axios.post(`${process.env.NEXT_PUBLIC_API_URL}/api/resume/get-resume`, { email });
       if (res.data?.FetchedResume) {
         setResumeData(res.data.FetchedResume);
         setHasResume(true);
@@ -102,7 +100,7 @@ export default function ResumeForm() {
     const checkSubscription = async () => {
       setSubLoading(true);
       try {
-        const res = await axios.get(`${EXPRESS_API_URL}/otp/status`, {
+        const res = await axios.get(`${process.env.NEXT_PUBLIC_API_URL}/api/otp/status`, {
           params: { uid: authUser.uid },
         });
         const premium = Boolean(res.data.isPremium);
@@ -152,7 +150,7 @@ export default function ResumeForm() {
   const handleSaveResumeEdit = async () => {
     setSavingEdit(true);
     try {
-      const res = await axios.put(`${EXPRESS_API_URL}/resume/update`, {
+      const res = await axios.put(`${process.env.NEXT_PUBLIC_API_URL}/api/resume/update`, {
         email: resumeData?.email || authUser?.email,
         ...editForm,
       });
@@ -179,7 +177,7 @@ export default function ResumeForm() {
     setTimeLeft(120);
     setLoading(true);
     try {
-      await axios.post(`${EXPRESS_API_URL}/otp/post`, {
+      await axios.post(`${process.env.NEXT_PUBLIC_API_URL}/api/otp/post`, {
         uid: authUser.uid,
         user: authUser.email,
         Uname: formData.name,
@@ -201,7 +199,7 @@ export default function ResumeForm() {
     }
     setLoading(true);
     try {
-      const res = await fetch(`${EXPRESS_API_URL}/verify-otp`, {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/verify-otp`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email: formData.email, otp }),
@@ -221,7 +219,7 @@ export default function ResumeForm() {
       }
       if (res.status === 201) {
         toast.success(t('resume.otpVerifiedToast') || 'OTP verified');
-        const payRes = await axios.post(`${EXPRESS_API_URL}/paymentReq`, { amount: 50 });
+        const payRes = await axios.post(`${process.env.NEXT_PUBLIC_API_URL}/api/paymentReq`, { amount: 50 });
         InitPayment(payRes.data.data);
       }
     } catch (err) {
@@ -240,7 +238,7 @@ export default function ResumeForm() {
       order_id: order.id,
       handler: async (response) => {
         try {
-          const res = await axios.post(`${EXPRESS_API_URL}/payment/verify`, {
+          const res = await axios.post(`${process.env.NEXT_PUBLIC_API_URL}/api/payment/verify`, {
             order_id: response.razorpay_order_id,
             payment_id: response.razorpay_payment_id,
             signature: response.razorpay_signature,
@@ -249,7 +247,7 @@ export default function ResumeForm() {
 
           if (res.status === 200) {
             toast.success(t('resume.paymentSuccess') || 'Payment Success');
-            await axios.post(`${EXPRESS_API_URL}/airesume`, { formData });
+            await axios.post(`${process.env.NEXT_PUBLIC_API_URL}/api/airesume`, { formData });
             setTimeout(() => router.push('/'), 1000);
           } else {
             toast.error(t('resume.facingError') || 'Facing error, try again');
