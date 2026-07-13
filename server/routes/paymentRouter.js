@@ -7,9 +7,9 @@ import { Router } from "express";
 const router = Router();
 import UserModel from "../models/userModel.js";
 import subscriptionModel from "../models/subscriptionDetialsModel.js";
-import nodemailer from "nodemailer";
 import { PLAN_CONFIG, amountToPlan } from "../config/plans.js";
 import { isWithinPaymentWindow } from "../utils/PaymentWindow.js";
+import { sendEmail } from "../utils/mailer.js";
 
 const PAYMENT_WINDOW_MESSAGE = "Payments are only allowed between 10:00 AM – 11:00 AM IST";
 
@@ -174,35 +174,5 @@ router.get("/:uid/plan", async (req, res) => {
             .json({ message: "Currently server is busy, try again later!" });
     }
 });
-
-const transporter = nodemailer.createTransport({
-    host: "smtp.gmail.com",
-    port: 465,
-    secure: true,
-    auth: {
-        user: process.env.EMAIL_USER,
-        pass: process.env.EMAIL_PASS,
-    },
-    connectionTimeout: 15000,
-    greetingTimeout: 15000,
-    socketTimeout: 15000,
-    family: 4
-});
-
-export const sendEmail = async (to, subject, html) => {
-    try {
-        const info = await transporter.sendMail({
-            from: `"InternArea" <${process.env.EMAIL_USER}>`,
-            to,
-            subject,
-            html,
-        });
-        console.log("Email sent:", info.messageId);
-        return true;
-    } catch (error) {
-        console.error(error);
-        return false;
-    }
-};
 
 export default router;

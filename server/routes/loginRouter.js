@@ -1,7 +1,7 @@
 import { Router } from "express";
 import LoginHistory from "../models/loginHistoryModel.js";
 import LoginOTP from "../models/loginOtpModel.js";
-import { sendEmail } from "./resumeRouter.js"; 
+import { sendEmail } from "../utils/mailer.js";
 import { parseDeviceInfo } from "../utils/deviceParser.js";
 import { getClientIp } from "../utils/getClientIp.js";
 

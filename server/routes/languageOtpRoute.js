@@ -1,6 +1,6 @@
 import { Router } from "express";
 import LanguageOTP from "../models/languageOtpModel.js";
-import { sendEmail } from "./resumeRouter.js"; // 🌍 Imports the updated IPv4 utility function cleanly
+import { sendEmail } from "../utils/mailer.js";// 🌍 Imports the updated IPv4 utility function cleanly
 
 const router = Router();
 

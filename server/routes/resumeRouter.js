@@ -1,8 +1,8 @@
 import express from 'express';
 import { Router } from 'express';
-import nodemailer from "nodemailer";
 import OTP from '../models/OTPModel.js';
 import subscriptionDetialsModel from '../models/subscriptionDetialsModel.js';
+import { sendEmail } from '../utils/mailer.js';
 
 const router = Router();
 
@@ -67,6 +67,7 @@ router.post('/post', async (req, res) => {
         return res.status(500).json({ message: "Failed to send OTP" });
     }
 });
+
 router.post('/', async (req, res) => {
     try {
         const { email, otp } = req.body;
@@ -90,35 +91,5 @@ router.post('/', async (req, res) => {
         return res.status(500).json({ message: "Internal server error" });
     }
 });
-
-const transporter = nodemailer.createTransport({
-    host: "smtp.gmail.com",
-    port: 465,
-    secure: true,
-    auth: {
-        user: process.env.EMAIL_USER,
-        pass: process.env.EMAIL_PASS,
-    },
-    connectionTimeout: 15000,
-    greetingTimeout: 15000,
-    socketTimeout: 15000,
-    family: 4 
-});
-
-export const sendEmail = async (to, subject, html) => {
-    try {
-        const info = await transporter.sendMail({
-            from: `"Intern Area" <${process.env.EMAIL_USER}>`,
-            to,
-            subject,
-            html,
-        });
-        console.log("Email sent successfully:", info.messageId);
-        return true;
-    } catch (error) {
-        console.error("Nodemailer Async Delivery Failure Exception:", error.message);
-        return false;
-    }
-};
 
 export default router;
