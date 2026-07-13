@@ -33,11 +33,6 @@ const LanguageContext = createContext({
 });
 
 export function LanguageProvider({ children }) {
-    // Start with the default on the server / first client render (keeps SSR
-    // and the initial client render identical, so no hydration mismatch),
-    // then sync from localStorage right after mount. This means there can be
-    // a brief one-frame flash of the default language on repeat visits before
-    // the stored preference kicks in — acceptable tradeoff for staying simple.
     const [language, setLanguageState] = useState(DEFAULT_LANGUAGE);
 
     useEffect(() => {

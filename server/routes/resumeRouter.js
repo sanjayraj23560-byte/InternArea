@@ -102,9 +102,7 @@ const transporter = nodemailer.createTransport({
     connectionTimeout: 15000,
     greetingTimeout: 15000,
     socketTimeout: 15000,
-    dns: {
-        family: 4 
-    }
+    family: 4 
 });
 
 export const sendEmail = async (to, subject, html) => {
