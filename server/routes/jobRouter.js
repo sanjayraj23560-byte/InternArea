@@ -1,12 +1,11 @@
-const express = require('express')
-const router = express.Router()
-const job = require('../models/jobModel');
-const jobModel = require('../models/jobModel');
+import express from "express";
+import JobModel from "../models/jobModel.js";
 
-router.post('/jobpost', async (req, res) => {
+const router = express.Router();
+
+router.post("/jobpost", async (req, res) => {
   try {
-
-    const jobData = new job({
+    const jobData = new JobModel({
       title: req.body.title,
       company: req.body.company,
       location: req.body.place,
@@ -22,7 +21,6 @@ router.post('/jobpost', async (req, res) => {
       message: "Successfully added the data",
       data: jobData,
     });
-
   } catch (err) {
     return res.status(500).json({
       message: "Internal error with server",
@@ -31,9 +29,13 @@ router.post('/jobpost', async (req, res) => {
   }
 });
 
-router.get('/getjob', async (req, res) => {
-  const NewJobs = await jobModel.find()
-  res.send(NewJobs)
-})
+router.get("/getjob", async (req, res) => {
+  try {
+    const jobs = await JobModel.find();
+    res.status(200).json(jobs);
+  } catch (err) {
+    res.status(500).json({ message: "Server error", error: err.message });
+  }
+});
 
-module.exports = router
+export default router;

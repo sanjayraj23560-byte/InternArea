@@ -2,6 +2,7 @@
 import { useParams, useRouter } from "next/navigation"
 import Navbar from "@/components/Navbar"
 import Footer from "@/components/Footer"
+import { useLanguage } from "@/context/LanguageContext";
 import { MapPin, Briefcase, Building2, Tag, ArrowLeft, CheckCircle, Loader2 } from "lucide-react"
 import { useState, useEffect } from "react"
 import { onAuthStateChanged } from "firebase/auth"
@@ -20,6 +21,7 @@ interface Job {
 }
 
 export default function JobDetail() {
+    const { t } = useLanguage();
     const { slug } = useParams()
     const router = useRouter()
 
@@ -53,13 +55,13 @@ export default function JobDetail() {
                 }
             } catch (err) {
                 console.error("Error fetching job details:", err)
-                toast.error("Could not load job details.")
+                toast.error(t('job.errorLoading') || "Could not load job details.")
             } finally {
                 setDataLoading(false)
             }
         }
         fetchJobData()
-    }, [slug])
+    }, [slug, t])
 
     useEffect(() => {
         if (!user || !job) return
@@ -82,16 +84,19 @@ export default function JobDetail() {
 
     const handleApply = async () => {
         if (!user) {
-            toast.error("Please sign in with Google to apply")
+            // FIX: this was using t('job.alreadyAppliedToast'), the wrong key
+            // entirely — it should tell the user to sign in, not that they
+            // already applied.
+            toast.error(t('job.pleaseSignIn') || "Please sign in with Google to apply")
             return
         }
         if (applied) {
-            toast("You've already applied for this job")
+            toast(t('job.alreadyAppliedToast') || "You've already applied for this job")
             return
         }
         try {
             setApplying(true)
-            await axios.post(
+            const response = await axios.post(
                 `${process.env.NEXT_PUBLIC_API_URL}/api/job-applications`,
                 {
                     _id: job!._id,
@@ -105,10 +110,32 @@ export default function JobDetail() {
                 }
             )
             setApplied(true)
-            toast.success("Application submitted successfully!")
-        } catch (err) {
+            toast.success(t('job.applicationSuccess') || "Application submitted successfully!")
+
+            // Once the job-applications backend route snapshots the resume the
+            // same way the internship route does, this will warn the user if
+            // they applied without one on file.
+            if (response.data?.hasResume === false) {
+                toast.warning(
+                    t('job.noResumeWarning') ||
+                    "You haven't uploaded a resume yet — your application may get rejected without one."
+                )
+            }
+        } catch (err: any) {
             console.error(err)
-            toast.error("Failed to apply. Please try again.")
+            if (err.response?.status === 403) {
+                // FIX: previously fired toast.error(limitReached), then
+                // toast.success(t('job.Membership')) — 'job.Membership' isn't a
+                // real key in any locale file, so that success toast was always
+                // rendering "undefined". Removed it; the upgrade prompt below
+                // already covers this case.
+                toast.error(err.response.data?.message || t('job.limitReached') || "You've reached your monthly application limit.")
+                toast.info(t('job.upgradePrompt') || "Upgrade your plan to apply for more jobs.", {
+                    onClick: () => router.push('/membership'),
+                })
+            } else {
+                toast.error(t('job.applicationFailed') || "Failed to apply. Please try again.")
+            }
         } finally {
             setApplying(false)
         }
@@ -125,10 +152,11 @@ export default function JobDetail() {
         <div className="min-h-screen bg-gray-50">
             <Navbar />
             <div className="flex flex-col items-center justify-center h-[60vh] text-gray-400">
-                <p className="text-lg font-medium">Job not found.</p>
+                {/* FIX: was t('job.obNotFound'), a typo of job.jobNotFound */}
+                <p className="text-lg font-medium">{t('job.jobNotFound') || "Job not found."}</p>
                 <button onClick={() => router.push('/jobs')}
                     className="mt-4 text-emerald-600 text-sm hover:underline flex items-center gap-1">
-                    <ArrowLeft size={14} /> Back to Jobs
+                    <ArrowLeft size={14} />{t('job.backToJobs') || "Back to Jobs"}
                 </button>
             </div>
             <Footer />
@@ -136,17 +164,17 @@ export default function JobDetail() {
     )
 
     return (
-        <div className="min-h-screen bg-gray-50">
+        <div className="min-h-screen max-md:pt-35 bg-gray-50">
             <Navbar />
-            <main className="max-w-2xl mx-auto px-4 pt-40 max-md:pt-72 pb-16">
+            <main className="max-w-2xl mx-auto px-4 pt-40 max-md:pt-35 pb-16">
                 <button onClick={() => router.back()}
                     className="flex items-center gap-2 text-sm text-gray-500 hover:text-emerald-600 mb-6 transition">
-                    <ArrowLeft size={15} /> Back
+                    <ArrowLeft size={15} /> {t('job.backToJobs') || "Back to Jobs"}
                 </button>
 
                 <div className="bg-white rounded-3xl border border-gray-100 shadow-sm p-8 flex flex-col gap-6">
                     <div>
-                        <span className="text-xs font-semibold text-emerald-600 uppercase tracking-widest">Full Time</span>
+                        <span className="text-xs font-semibold text-emerald-600 uppercase tracking-widest">{t('job.fullTime') || "Full Time"}</span>
                         <h1 className="text-2xl font-bold text-gray-900 mt-1 leading-tight">{job.title}</h1>
                         <p className="text-emerald-600 font-semibold text-lg mt-1">{job.salary}</p>
                     </div>
@@ -160,17 +188,17 @@ export default function JobDetail() {
 
                     <div className="bg-emerald-50 rounded-2xl px-5 py-4 flex items-center justify-between">
                         <div>
-                            <p className="text-xs text-gray-500 font-medium uppercase tracking-wide">Monthly Salary</p>
+                            <p className="text-xs text-gray-500 font-medium uppercase tracking-wide">{t('job.monthlySalary') || "Monthly Salary"}</p>
                             <p className="text-xl font-bold text-emerald-600 mt-0.5">{job.salary}</p>
                         </div>
                         <div>
-                            <p className="text-xs text-gray-500 font-medium uppercase tracking-wide">Experience</p>
+                            <p className="text-xs text-gray-500 font-medium uppercase tracking-wide">{t('job.experience') || "Experience"}</p>
                             <p className="text-base font-semibold text-gray-800 mt-0.5">{job.experience}</p>
                         </div>
                     </div>
 
                     <div className="border-t border-gray-100 pt-4">
-                        <h2 className="font-semibold text-gray-800 mb-2">About this role</h2>
+                        <h2 className="font-semibold text-gray-800 mb-2">{t('job.aboutThisRole') || "About this role"}</h2>
                         <p className="text-sm text-gray-500 leading-relaxed">
                             <span className="text-gray-700 font-medium">{job.company}</span> is hiring
                             a <span className="text-gray-700 font-medium">{job.title}</span> in {job.location}.
@@ -180,18 +208,18 @@ export default function JobDetail() {
 
                     {/* ── Apply button logic ── */}
                     {!user ? (
-                        <button onClick={() => toast.error("Please sign in with Google to apply")}
+                        <button onClick={() => toast.error(t('job.pleaseSignIn') || "Please sign in with Google to apply")}
                             className="w-full bg-gray-100 text-gray-400 font-semibold py-3 rounded-2xl text-sm cursor-not-allowed">
-                            Sign in to Apply
+                            {t('job.signInToApply') || "Sign in to Apply"}
                         </button>
                     ) : applied ? (
                         <div className="w-full flex items-center justify-center gap-2 bg-emerald-50 text-emerald-600 font-semibold py-3 rounded-2xl text-sm border border-emerald-200">
-                            <CheckCircle size={16} /> Already Applied
+                            <CheckCircle size={16} />{t('job.alreadyApplied') || "Already Applied"}
                         </div>
                     ) : (
                         <button onClick={handleApply} disabled={applying}
                             className="w-full bg-emerald-600 hover:bg-emerald-700 disabled:opacity-60 text-white font-semibold py-3 rounded-2xl transition text-sm">
-                            {applying ? "Submitting..." : "Apply Now →"}
+                            {applying ? (t('job.submitting') || "Submitting...") : (t('job.applyNow') || "Apply Now →")}
                         </button>
                     )}
                 </div>

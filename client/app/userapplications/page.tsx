@@ -15,6 +15,7 @@ import {
     XCircle,
     Loader2
 } from "lucide-react";
+import { useLanguage } from "@/context/LanguageContext";
 
 interface DBApplication {
     _id: string;
@@ -30,6 +31,28 @@ interface DBApplication {
         duration: string;
     };
 }
+
+// Maps the app's language code to an Intl locale for date formatting
+const DATE_LOCALES: Record<string, string> = {
+    en: "en-IN",
+    es: "es-ES",
+    hi: "hi-IN",
+    pt: "pt-PT",
+    zh: "zh-CN",
+    fr: "fr-FR",
+};
+
+// Backend statuses are fixed strings ("Approved", "Pending", etc.) — this
+// maps them to a translation key so the displayed label follows the
+// selected language, while getStatusStyle/getStatusIcon (unchanged) still
+// key off the raw backend string.
+const STATUS_KEY_MAP: Record<string, string> = {
+    Approved: "approved",
+    Shortlisted: "shortlisted",
+    Rejected: "rejected",
+    Pending: "pending",
+    "Under Review": "underReview",
+};
 
 const getStatusStyle = (status: string) => {
     switch (status) {
@@ -62,9 +85,19 @@ const getStatusIcon = (status: string) => {
 };
 
 function User_Application() {
+    const { t, language } = useLanguage();
     const [applications, setApplications] = useState<DBApplication[]>([]);
     const [loading, setLoading] = useState(true);
     const [user, setUser] = useState<any>(null);
+
+    // Translates a raw backend status string, falling back to the raw
+    // string itself if there's no mapping/translation for it
+    const getStatusLabel = (status: string) => {
+        const key = STATUS_KEY_MAP[status];
+        if (!key) return status;
+        return t(`myApplications.statusLabels.${key}`) || status;
+    };
+
     useEffect(() => {
         const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
             if (currentUser) {
@@ -100,7 +133,7 @@ function User_Application() {
             <div className="flex min-h-screen items-center justify-center bg-slate-50">
                 <div className="flex flex-col items-center gap-2 text-slate-500">
                     <Loader2 className="animate-spin text-blue-600" size={32} />
-                    <p className="text-sm font-medium">Loading your applications...</p>
+                    <p className="text-sm font-medium">{t('myApplications.loading') || "Loading your applications..."}</p>
                 </div>
             </div>
         );
@@ -111,46 +144,49 @@ function User_Application() {
             <div className="flex min-h-screen items-center justify-center bg-slate-50 px-4">
                 <div className="text-center bg-white p-8 rounded-3xl border border-slate-100 shadow-sm max-w-sm">
                     <BriefcaseBusiness className="mx-auto text-slate-400 mb-4" size={40} />
-                    <h2 className="text-xl font-bold text-slate-900">Access Denied</h2>
-                    <p className="text-slate-500 text-sm mt-2">Please log in with your account credentials to monitor your active internship and job applications.</p>
+                    <h2 className="text-xl font-bold text-slate-900">{t('myApplications.accessDeniedTitle') || "Access Denied"}</h2>
+                    <p className="text-slate-500 text-sm mt-2">
+                        {t('myApplications.accessDeniedMessage') || "Please log in with your account credentials to monitor your active internship and job applications."}
+                    </p>
                 </div>
             </div>
         );
     }
+
+    const greeting = (t('myApplications.greeting') || "Hello, {email}! Track your selection status updates right here.")
+        .replace("{email}", user.email);
 
     return (
         <div className="min-h-screen bg-slate-50 px-4 py-20 md:mt-10 sm:mt-40 max-xl:mt-40">
             <div className="mx-auto max-w-6xl">
                 <div className="mb-8">
                     <p className="text-sm font-semibold uppercase tracking-widest text-blue-600">
-                        My Dashboard
+                        {t('myApplications.dashboardLabel') || "My Dashboard"}
                     </p>
                     <h1 className="mt-2 text-3xl font-bold text-slate-900">
-                        Applied Jobs & Internships
+                        {t('myApplications.title') || "Applied Jobs & Internships"}
                     </h1>
-                    <p className="mt-2 text-slate-500">
-                        Hello, <span className="font-semibold text-slate-700">{user.email}</span>! Track your selection status updates right here.
-                    </p>
+                    <p className="mt-2 text-slate-500">{greeting}</p>
                 </div>
 
                 {/* Dashboard Metrics */}
                 <div className="mb-6 grid grid-cols-1 gap-4 md:grid-cols-3">
                     <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-                        <p className="text-sm text-slate-500">Total Applications</p>
+                        <p className="text-sm text-slate-500">{t('myApplications.totalApplications') || "Total Applications"}</p>
                         <h2 className="mt-2 text-3xl font-bold text-slate-900">
                             {applications.length}
                         </h2>
                     </div>
 
                     <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-                        <p className="text-sm text-slate-500">Internships</p>
+                        <p className="text-sm text-slate-500">{t('myApplications.internships') || "Internships"}</p>
                         <h2 className="mt-2 text-3xl font-bold text-blue-600">
                             {applications.filter((app) => app.category !== "MBA" && app.category !== "Media").length}
                         </h2>
                     </div>
 
                     <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-                        <p className="text-sm text-slate-500">Jobs / Alternate Roles</p>
+                        <p className="text-sm text-slate-500">{t('myApplications.jobsAlternate') || "Jobs / Alternate Roles"}</p>
                         <h2 className="mt-2 text-3xl font-bold text-emerald-600">
                             {applications.filter((app) => app.category === "MBA" || app.category === "Media").length}
                         </h2>
@@ -160,7 +196,7 @@ function User_Application() {
                 {/* Applications Grid Display */}
                 {applications.length === 0 ? (
                     <div className="bg-white border border-dashed border-slate-200 rounded-3xl p-12 text-center text-slate-400">
-                        No applications submitted yet.
+                        {t('myApplications.noApplications') || "No applications submitted yet."}
                     </div>
                 ) : (
                     <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
@@ -172,11 +208,11 @@ function User_Application() {
                                 <div className="mb-4 flex items-start justify-between gap-4">
                                     <div>
                                         <span className="inline-flex rounded-full px-3 py-1 text-xs font-semibold bg-blue-50 text-blue-600 uppercase tracking-wider">
-                                            {app.category || "Internship"}
+                                            {app.category || t('myApplications.categoryFallback') || "Internship"}
                                         </span>
 
                                         <h2 className="mt-3 text-xl font-bold text-slate-900">
-                                            {app.Application?.title || "Role Title"}
+                                            {app.Application?.title || t('myApplications.roleTitleFallback') || "Role Title"}
                                         </h2>
                                     </div>
 
@@ -186,7 +222,7 @@ function User_Application() {
                                         )}`}
                                     >
                                         {getStatusIcon(app.status)}
-                                        {app.status}
+                                        {getStatusLabel(app.status)}
                                     </span>
                                 </div>
 
@@ -198,17 +234,17 @@ function User_Application() {
 
                                     <div className="flex items-center gap-2">
                                         <MapPin size={17} className="text-slate-400" />
-                                        {app.Application?.location || "Not specified"}
+                                        {app.Application?.location || t('myApplications.locationFallback') || "Not specified"}
                                     </div>
 
                                     <div className="flex items-center gap-2">
                                         <IndianRupee size={17} className="text-slate-400" />
-                                        {app.Application?.stipend || "Unpaid / Negotiable"}
+                                        {app.Application?.stipend || t('myApplications.stipendFallback') || "Unpaid / Negotiable"}
                                     </div>
 
                                     <div className="flex items-center gap-2">
                                         <CalendarDays size={17} className="text-slate-400" />
-                                        Applied: {new Date(app.createdAt).toLocaleDateString("en-IN", {
+                                        {t('myApplications.appliedLabel') || "Applied"}: {new Date(app.createdAt).toLocaleDateString(DATE_LOCALES[language] || "en-IN", {
                                             day: "numeric",
                                             month: "short",
                                             year: "numeric"
@@ -218,12 +254,8 @@ function User_Application() {
 
                                 <div className="mt-5 flex flex-col gap-3 border-t border-slate-100 pt-5 sm:flex-row sm:items-center sm:justify-between">
                                     <p className="text-xs text-slate-400 font-mono">
-                                        ID: {app._id.slice(-6).toUpperCase()}
+                                        {t('myApplications.idLabel') || "ID"}: {app._id.slice(-6).toUpperCase()}
                                     </p>
-
-                                    <button className="rounded-xl bg-slate-900 px-4 py-2 text-sm font-semibold text-white transition hover:bg-slate-700">
-                                        View Details
-                                    </button>
                                 </div>
                             </div>
                         ))}

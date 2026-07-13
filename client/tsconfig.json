@@ -29,6 +29,6 @@
     ".next/types/**/*.ts",
     ".next/dev/types/**/*.ts",
     "**/*.mts"
-, "components/Navbar.tsx"  ],
+, "components/Navbar.tsx", "context/LanguageContext.js"  ],
   "exclude": ["node_modules"]
 }

@@ -1,27 +1,45 @@
-const express = require('express')
-const router = express.Router()
+import dotenv from "dotenv";
+dotenv.config();
+import express from "express";
+import admin from "./adminRouter.js";
+import internship from "./internshipRouter.js";
+import job from "./jobRouter.js";
+import applications from "./applicationsRouter.js";
+import jobApplications from "./jobApplicationRouter.js";
+import communityPost from './communityPostsRouter.js';
+import engageRequestes from './engageRouter.js';
+import profile from './profileRouter.js';
+import paymentRouter from './paymentRouter.js';  // one import for all payment routes
+import postResponse from './postResponse.js'
+import OTP from './resumeRouter.js'
+import resPayment from './resumePaymentRouter.js'
+import paymentVer from './resumePaymentRouter.js';
+import aiResume from './aiResumeRouter.js'
+import getResume from './aiResumeRouter.js'
+import languageOtpRoute from './languageOtpRoute.js'
 
-// ── 1. Cleaned and Grouped Route Imports ──
-const admin = require('./adminRouter.js')
-const internship = require('./internshipRouter.js')
-const job = require('./jobRouter.js')
-const applications = require('./applicationsRouter.js') // Handles User & Admin applications
+const router = express.Router();
 
-// ── 2. Route Endpoints Mount Configuration ──
+router.use('/language-otp', languageOtpRoute);
+router.use("/admin", admin);
+router.use('/airesume', aiResume)
+router.use('/resume', getResume)
+router.use('/communitypost', communityPost);
+router.use('/engagerequest', engageRequestes);
+router.use('/postres', postResponse);
+router.use("/internship", internship);
+router.use("/getintern", internship);
+router.use('/paymentReq', resPayment)
+router.use("/job", job);
+router.use("/jobs", job);
+router.use('/otp', OTP);
+router.use('/payment', paymentVer);
+router.use('/verify-otp', OTP)
+router.use("/application", applications);
+router.use("/job-applications", jobApplications);
+router.use("/profile", profile);
+router.use("/paymentreq", paymentRouter);
+router.use("/verify", paymentRouter);
+router.use("/plan", paymentRouter);
 
-// Admin Authorization Routes
-router.use('/admin', admin)
-
-// Internship Routes (Both Posting & Fetching)
-router.use('/internship', internship)
-router.use('/getintern', internship) // Matches your browsing page path structure
-
-// Job Routes (Both Posting & Fetching)
-router.use('/job', job)
-router.use('/jobs', job) // Matches your Jobs page path structure
-
-// Applications Routes (Handles Users, Admins, and Status updates)
-router.use('/application', applications)
-router.use('/job-applications', applications) // Aligns perfectly with the JobDetail path requests!
-
-module.exports = router
+export default router;

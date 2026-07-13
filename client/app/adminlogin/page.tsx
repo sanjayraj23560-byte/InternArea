@@ -1,12 +1,14 @@
 'use client'
 
 import React, { useState } from 'react'
+import { useLanguage } from '@/context/LanguageContext'
 import { BiLeftArrowAlt } from 'react-icons/bi'
 import { useRouter } from 'next/navigation'
 import { toast } from "react-toastify";
 import axios from 'axios';
 
 function AdminLogin() {
+    const { t } = useLanguage()
     const [error, setError] = useState('')
     const [isLoading, setIsLoading] = useState(false)
     const route = useRouter()
@@ -27,13 +29,13 @@ function AdminLogin() {
     const handlesubmit = async (e: React.FormEvent) => {
 
         if (!formadata.username || !formadata.password) {
-            toast.error("Please fill all fields");
+            toast.error(t("Please fill all fields"));
             return;
         }
 
         e.preventDefault();
         if (!formadata.username || !formadata.password) {
-            toast.error("Please fill in all detials");
+            toast.error(t("Please fill in all detials"));
             return;
         }
         try {
@@ -64,7 +66,7 @@ function AdminLogin() {
                         className='group flex items-center gap-2 px-4 py-2 bg-white/10 backdrop-blur-sm rounded-lg text-white hover:bg-white/20 transition-all duration-300 border border-white/20 hover:border-white/40'
                     >
                         <BiLeftArrowAlt />
-                        <span>Back to Home</span>
+                        <span>{t("Back to Home")}</span>
 
                     </button>
                 </div>

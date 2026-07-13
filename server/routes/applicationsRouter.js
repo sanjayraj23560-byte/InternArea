@@ -1,90 +1,90 @@
-const express = require('express')
-const router = express.Router()
-const Application = require('../models/applicationsModel')
+import { Router } from "express";
+import mongoose from "mongoose";
+const router = Router();
 
-// ── 1. GET ALL APPLICATIONS (For Admin View) ──
-// Path: GET https://internarea-kuao.onrender.comapi/job-applications/admin
-router.get('/admin', async (req, res) => {
+import {
+    checkApplicationLimit,
+    incrementApplicationUsage,
+} from "../utils/applicationLimit.js";
+
+// ── Application schema (internship applications) ─────────────────────────
+const applicationSchema = new mongoose.Schema(
+    {
+        Application: {
+            internshipId: String,
+            title: String,
+            company: String,
+            location: String,
+            stipend: String,
+            duration: String,
+            category: String,
+        },
+        user: {
+            uid: String,
+            email: String,
+        },
+    },
+    { timestamps: true }
+);
+
+const ApplicationModel =
+    mongoose.models.Application || mongoose.model("Application", applicationSchema);
+
+// ── Submit an internship application
+router.post("/", async (req, res) => {
     try {
-        // Fetch all user applications submitted across the platform
-        const allApplications = await Application.find({}).sort({ createdAt: -1 });
-        return res.status(200).json(allApplications);
-    } catch (err) {
-        console.error("Admin database fetch error:", err);
-        return res.status(500).json({ Message: "Internal Server Error", error: err.message });
-    }
-});
+        const { user, _id, title, company, location, stipend, duration, category } = req.body;
 
-// ── 2. GET USER SPECIFIC APPLICATIONS (Your existing route) ──
-router.get('/', async (req, res) => {
-    try {
-        const userEmail = req.query.email;
-        if (!userEmail) {
-            return res.status(400).json({ Message: "User email parameter is required" });
-        }
-        const userApplications = await Application.find({ "user.email": userEmail }).sort({ createdAt: -1 });
-        return res.status(200).json(userApplications);
-    } catch (err) {
-        console.error("Database fetch error:", err);
-        return res.status(500).json({ Message: "Internal Server Error", error: err.message });
-    }
-});
-
-// ── 3. UPDATE APPLICATION STATUS (Admin Accept / Reject Action) ──
-// Path: PUT https://internarea-kuao.onrender.comapi/job-applications/:id/status
-router.put('/:id/status', async (req, res) => {
-    try {
-        const { id } = req.params;
-        const { status } = req.body; // Expecting "Accepted" or "Rejected"
-
-        if (!['Accepted', 'Rejected', 'Pending'].includes(status)) {
-            return res.status(400).json({ Message: "Invalid status value provided" });
+        if (!user?.uid) {
+            return res.status(400).json({ message: "User is required" });
         }
 
-        // Find the application doc and update its status field dynamically
-        const updatedApplication = await Application.findByIdAndUpdate(
-            id,
-            { status: status },
-            { new: true } // Returns the modified document instead of the original
-        );
+        const { allowed, plan, limit, used, subscriptionId } = await checkApplicationLimit(user.uid);
 
-        if (!updatedApplication) {
-            return res.status(404).json({ Message: "Application record not found" });
+        if (!allowed) {
+            return res.status(403).json({
+                message: `You've reached your ${plan} plan limit of ${limit} application${limit === 1 ? "" : "s"} this month. Upgrade your plan to apply for more.`,
+                plan,
+                limit,
+                used,
+            });
         }
 
-        return res.status(200).json(updatedApplication);
-    } catch (err) {
-        console.error("Status update error:", err);
-        return res.status(500).json({ Message: "Internal Server Error", error: err.message });
-    }
-});
-
-// ── 4. POST NEW APPLICATION (Your existing route) ──
-router.post('/', async (req, res) => {
-    try {
-        const newApplicationInstance = new Application({
-            company: req.body.company,
-            category: req.body.category,
-            status: "Pending", // Ensure default state tracking is initialized
-            user: {
-                uid: req.body.user?.uid,
-                email: req.body.user?.email
-            },
+        const application = await ApplicationModel.create({
             Application: {
-                internshipId: req.body._id,
-                title: req.body.title,
-                location: req.body.location,
-                stipend: req.body.stipend,
-                duration: req.body.duration
-            }
+                internshipId: _id,
+                title,
+                company,
+                location,
+                stipend,
+                duration,
+                category,
+            },
+            user: { uid: user.uid, email: user.email },
         });
 
-        const savedApplication = await newApplicationInstance.save();
-        return res.status(200).json(savedApplication);
-    } catch (err) {
-        console.error("Database save error:", err);
-        return res.status(400).json({ Message: "Internal Error on server!", error: err.message });
+        await incrementApplicationUsage(subscriptionId);
+
+        return res.status(201).json({ success: true, data: application });
+    } catch (error) {
+        console.error(error);
+        return res.status(500).json({ message: "Internal server error" });
     }
 });
 
-module.exports = router;
+// ── Get all applications for a given email ────────────────────────────────
+router.get("/", async (req, res) => {
+    try {
+        const { email } = req.query;
+        if (!email) {
+            return res.status(400).json({ message: "Email is required" });
+        }
+        const applications = await ApplicationModel.find({ "user.email": email });
+        return res.status(200).json(applications);
+    } catch (error) {
+        console.error(error);
+        return res.status(500).json({ message: "Internal server error" });
+    }
+});
+
+export default router;

@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import Navbar from "@/components/Navbar"
 import axios from "axios"
 import Footer from "@/components/Footer"
+import { useLanguage } from "@/context/LanguageContext"; // 🌍 1. Hook up core context engine
 import { toast } from "react-toastify"
 import { onAuthStateChanged, User } from "firebase/auth";
 
@@ -23,13 +24,14 @@ interface Internship {
 }
 
 export default function InternDetail() {
+  const { t } = useLanguage() // 🌍 2. Initialize translation context state hook
   const { slug } = useParams()
   const router = useRouter()
 
   const [item, setItem] = useState<Internship | null>(null)
   const [dataLoading, setDataLoading] = useState(true)
   const [isApplying, setIsApplying] = useState(false)
-  const [hasApplied, setHasApplied] = useState(false) // ── Track application status ──
+  const [hasApplied, setHasApplied] = useState(false)
   const [currentUser, setCurrentUser] = useState<User | null>(null)
   const [authLoading, setAuthLoading] = useState(true)
 
@@ -56,27 +58,26 @@ export default function InternDetail() {
         }
       } catch (error) {
         console.error("Failed to load internship detail:", error)
-        toast.error("Error loading internship details.")
+        toast.error(t('internshipDetail.errorLoading') || "Error loading internship details.")
       } finally {
         setDataLoading(false)
       }
     }
 
     fetchInternshipDetail()
-  }, [slug])
+  }, [slug, t])
 
-  // ── Check if current authenticated user has already applied ──
+  // Check if current authenticated user has already applied
   useEffect(() => {
     if (!currentUser || !item) return
 
     const checkIfApplied = async () => {
       try {
-        const response = await axios.get(`${process.env.NEXT_PUBLIC_API_URL}/api/job-applications`, {
+        const response = await axios.get(`${process.env.NEXT_PUBLIC_API_URL}/api/application`, {
           params: { email: currentUser.email }
         })
-        
+
         if (Array.isArray(response.data)) {
-          // Verify if any application contains this internship ID
           const alreadyApplied = response.data.some(
             (app: any) => app.Application?.internshipId === item._id
           )
@@ -94,12 +95,12 @@ export default function InternDetail() {
     if (!item) return;
 
     if (!currentUser) {
-      toast.error("Please log in to apply for this internship!")
+      toast.error(t('internshipDetail.loginToApplyAlert') || "Please log in to apply for this internship!")
       return
     }
 
     if (hasApplied) {
-      toast.info("You have already applied for this role!")
+      toast.info(t('internshipDetail.alreadyAppliedAlert') || "You have already applied for this role!")
       return
     }
 
@@ -116,12 +117,29 @@ export default function InternDetail() {
 
       const response = await axios.post(`${process.env.NEXT_PUBLIC_API_URL}/api/application`, payload)
       if (response.status === 200 || response.status === 201) {
-        toast.success("Application submitted successfully!")
-        setHasApplied(true) // Freeze button state on successful submit
+        toast.success(t('internshipDetail.successAlert') || "Application submitted successfully!")
+        setHasApplied(true)
+
+        // Backend snapshots the applicant's resume onto the application if one
+        // exists and reports back whether it found one — warn if not, since a
+        // resume-less application is more likely to get rejected.
+        if (response.data?.hasResume === false) {
+          toast.warning(
+            t('internship.noResumeWarning') ||
+            "You haven't uploaded a resume yet — your application may get rejected without one."
+          )
+        }
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error("Submission failed:", error)
-      toast.error("Failed to submit application.")
+      if (error.response?.status === 403) {
+        toast.error(error.response.data?.message || t('internshipDetail.limitReachedDefault') || "You've reached your monthly application limit.")
+        toast.info(t('internshipDetail.upgradePromptAlert') || "Upgrade your plan to apply for more internships.", {
+          onClick: () => router.push('/membership'),
+        })
+      } else {
+        toast.error(t('internshipDetail.failedAlert') || "Failed to submit application.")
+      }
     } finally {
       setIsApplying(false)
     }
@@ -136,13 +154,13 @@ export default function InternDetail() {
   }
 
   if (!item) return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen max-md:pt-35 bg-gray-50">
       <Navbar />
       <div className="flex flex-col items-center justify-center h-[60vh] text-gray-400">
-        <p className="text-lg font-medium">Internship not found.</p>
+        <p className="text-lg font-medium">{t('internshipDetail.notFound') || "Internship not found."}</p>
         <button onClick={() => router.push('/internship')}
           className="mt-4 text-blue-600 text-sm hover:underline flex items-center gap-1">
-          <ArrowLeft size={14} /> Back to Internships
+          <ArrowLeft size={14} /> {t('internshipDetail.backToInternships') || "Back to Internships"}
         </button>
       </div>
       <Footer />
@@ -151,15 +169,16 @@ export default function InternDetail() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <Navbar />
       <main className="max-w-2xl mx-auto px-4 pt-40 max-md:pt-72 pb-16">
         <button onClick={() => router.back()} className="flex items-center gap-2 text-sm text-gray-500 hover:text-blue-600 mb-6 transition">
-          <ArrowLeft size={15} /> Back
+          <ArrowLeft size={15} /> {t('internshipDetail.backBtn') || "Back"}
         </button>
 
         <div className="bg-white rounded-3xl border border-gray-100 shadow-sm p-8 flex flex-col gap-6">
           <div>
-            <span className="text-xs font-semibold text-blue-600 uppercase tracking-widest">Internship</span>
+            <span className="text-xs font-semibold text-blue-600 uppercase tracking-widest">
+              {t('internshipDetail.internshipBadge') || "Internship"}
+            </span>
             <h1 className="text-2xl font-bold text-gray-900 mt-1 leading-tight">{item.title}</h1>
             <p className="text-blue-600 font-semibold text-lg mt-1">{item.stipend}</p>
           </div>
@@ -173,32 +192,33 @@ export default function InternDetail() {
 
           {item.description && (
             <div className="text-sm">
-              <h3 className="font-semibold text-gray-800 mb-2">Description</h3>
+              <h3 className="font-semibold text-gray-800 mb-2">
+                {t('internshipDetail.descriptionLabel') || "Description"}
+              </h3>
               <p className="text-gray-600 leading-relaxed whitespace-pre-line">{item.description}</p>
             </div>
           )}
 
-          {/* ── Dynamic Action Button Rendering ── */}
+          {/* ── Dynamic Action Button Localization Block ── */}
           {!currentUser ? (
-            <button onClick={() => toast.error("Please log in to apply!")}
+            <button onClick={() => toast.error(t('internshipDetail.loginToApplyAlert') || "Please log in to apply!")}
               className="w-full bg-gray-100 text-gray-400 font-semibold py-3 rounded-2xl text-sm cursor-not-allowed mt-4">
-              Log in to Apply
+              {t('internshipDetail.actionLogin') || "Log in to Apply"}
             </button>
           ) : hasApplied ? (
             <div className="w-full flex items-center justify-center gap-2 bg-blue-50 text-blue-600 font-semibold py-3 rounded-2xl text-sm border border-blue-200 mt-4">
-              <CheckCircle size={16} /> Application Submitted
+              <CheckCircle size={16} /> {t('internshipDetail.actionSubmitted') || "Application Submitted"}
             </div>
           ) : (
             <button
               onClick={Post_Application}
               disabled={isApplying}
               className="w-full bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white font-semibold py-3 rounded-2xl transition text-sm mt-4">
-              {isApplying ? "Applying..." : "Apply Now →"}
+              {isApplying ? (t('internshipDetail.actionApplying') || "Applying...") : (t('internshipDetail.actionApply') || "Apply Now →")}
             </button>
           )}
         </div>
       </main>
-      <Footer />
     </div>
   )
 }

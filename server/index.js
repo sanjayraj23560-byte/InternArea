@@ -1,11 +1,11 @@
-const express = require('express');
+import express from "express";
+import cors from "cors";
+import connectDB from "./db.js";
+import router from "./routes/index.js";
+import dotenv from "dotenv";
+dotenv.config();
+
 const app = express();
-
-const cors = require('cors');
-const connectDB = require('./db')
-
-const router = require('./routes/index');
-
 const port = 5000;
 
 app.use(cors());
@@ -13,12 +13,12 @@ app.use(express.json());
 
 connectDB();
 
-app.use('/api', router);
+app.use("/api", router);
 
-app.get('/', (req, res) => {
-    res.send("Hello");
+app.get("/", (req, res) => {
+  res.send("Hello");
 });
 
 app.listen(port, () => {
-    console.log(`Server running on port ${port}`);
+  console.log(`Server running on port ${port}`);
 });

@@ -65,6 +65,7 @@ const actions = [
 ]
 
 function AdminPanel() {
+ 
   const route = useRouter()
   return (
     <div className="min-h-screen bg-gray-50">

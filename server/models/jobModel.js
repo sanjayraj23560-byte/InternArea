@@ -1,4 +1,5 @@
-const mongoose = require('mongoose');
+import mongoose from "mongoose";
+
 const jobSchema = new mongoose.Schema({
     title: String,
     company: String,
@@ -10,7 +11,7 @@ const jobSchema = new mongoose.Schema({
     perks: Array,
     noOfOpenings: String,
     startDate: String,
-    additionalInformation:String,
+    additionalInformation: String,
     experience: String,
     category: String,
     createdAt: {
@@ -18,5 +19,7 @@ const jobSchema = new mongoose.Schema({
         default: Date.now
     }
 });
-const jobModel = mongoose.model("jobData",jobSchema);
-module.exports = jobModel;
+
+const JobModel = mongoose.model("jobData", jobSchema);
+
+export default JobModel;
