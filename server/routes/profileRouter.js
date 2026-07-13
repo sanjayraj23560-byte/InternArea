@@ -3,10 +3,6 @@ import Profile from "../models/profileModel.js";
 
 const router = Router();
 
-// ── Save (create or update) a profile ─────────────────────────────────────
-// Upserting on `uid` means this one route handles both the very first save
-// (no profile exists yet) and every subsequent edit — no need for separate
-// POST /create and PUT /update routes.
 router.post("/info", async (req, res) => {
     try {
         const {
@@ -31,7 +27,7 @@ router.post("/info", async (req, res) => {
         }
 
         const profile = await Profile.findOneAndUpdate(
-            { uid }, // find by this
+            { uid },
             {
                 uid,
                 name,
@@ -47,12 +43,12 @@ router.post("/info", async (req, res) => {
                 educations,
                 projects,
                 certs,
-            }, // set these fields
+            },
             {
-                new: true, // return the updated doc, not the pre-update one
-                upsert: true, // create it if it doesn't exist yet
-                runValidators: true, // still enforce schema rules (e.g. required email) on update
-                setDefaultsOnInsert: true, // apply schema defaults on first creation
+                new: true, 
+                upsert: true, 
+                runValidators: true,
+                setDefaultsOnInsert: true,
             }
         );
 
@@ -63,7 +59,6 @@ router.post("/info", async (req, res) => {
     }
 });
 
-// ── Fetch a profile by uid ─────────────────────────────────────────────────
 router.get("/", async (req, res) => {
     try {
         const { uid } = req.query;

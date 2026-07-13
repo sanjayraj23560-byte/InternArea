@@ -1,13 +1,12 @@
 import { Router } from "express";
 import LoginHistory from "../models/loginHistoryModel.js";
 import LoginOTP from "../models/loginOtpModel.js";
-import { sendEmail } from "./resumeRouter.js"; // reuses your existing mailer helper
+import { sendEmail } from "./resumeRouter.js"; 
 import { parseDeviceInfo } from "../utils/deviceParser.js";
 import { getClientIp } from "../utils/getClientIp.js";
 
 const router = Router();
 
-// ── Mobile login window: 10:00 AM – 1:00 PM IST ──────────────────────────
 function isWithinMobileWindow() {
     const now = new Date();
     const istTime = now.toLocaleString("en-US", {
@@ -18,11 +17,8 @@ function isWithinMobileWindow() {
     });
     const [hourStr, minuteStr] = istTime.split(":");
     const minutesSinceMidnight = parseInt(hourStr, 10) * 60 + parseInt(minuteStr, 10);
-    return minutesSinceMidnight >= 10 * 60 && minutesSinceMidnight < 13 * 60; // 10:00–12:59
+    return minutesSinceMidnight >= 10 * 60 && minutesSinceMidnight < 13 * 60; 
 }
-
-// ── STEP 1: call this immediately after Firebase auth resolves, before
-// treating the user as logged in on the client ──────────────────────────
 router.post("/check", async (req, res) => {
     try {
         const { uid, email } = req.body;
@@ -33,9 +29,6 @@ router.post("/check", async (req, res) => {
         const userAgent = req.headers["user-agent"] || "";
         const ip = getClientIp(req);
         const { browser, os, deviceType } = parseDeviceInfo(userAgent);
-
-        // Rule B: mobile devices only allowed 10 AM–1 PM IST, any browser.
-        // Checked first since it's a hard block regardless of the Chrome rule.
         if (deviceType === "Mobile" && !isWithinMobileWindow()) {
             const entry = await LoginHistory.create({
                 uid,
@@ -56,9 +49,6 @@ router.post("/check", async (req, res) => {
             });
         }
 
-        // Rule A: Chrome (desktop or mobile) requires OTP verification.
-        // If both rules apply (Chrome + mobile within the window), this runs
-        // after the time-window check passes.
         if (browser === "Chrome") {
             const oneTimePass = Math.floor(100000 + Math.random() * 900000).toString();
 

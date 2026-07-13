@@ -36,9 +36,6 @@ router.post('/verify', async (req, res) => {
         if (expectedSignature === signature) {
             return res.status(200).json({ message: "Payment verified" })
         }
-
-        // FIX: previously there was no response sent when the signature
-        // didn't match, which left the frontend's request hanging forever.
         return res.status(400).json({ message: "Payment verification failed" })
     } catch (error) {
         console.log("After payment", error)

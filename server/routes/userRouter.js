@@ -2,17 +2,14 @@ import express from 'express';
 import UserModel from '../models/userModel.js';
 
 const router = express.Router();
-
-// 1. SIGNUP / SYNC OPERATION: Create or Upsert user data
 router.post('/sync-user', async (req, res) => {
     const { uid, name, email, profilePicture } = req.body;
 
     if (!uid || !name || !email) {
         return res.status(400).json({ message: "Missing required identification metadata parameters." });
     }
-
     try {
-        // Use findOneAndUpdate with upsert: true to avoid throwing errors if the user collection document already exists
+
         const user = await UserModel.findOneAndUpdate(
             { _id: uid },
             {
@@ -30,7 +27,6 @@ router.post('/sync-user', async (req, res) => {
     }
 });
 
-// 2. LOGIN VERIFICATION OPERATION: Fetch profile information on a successful login matching uid
 router.get('/me', async (req, res) => {
     const { uid } = req.query;
 

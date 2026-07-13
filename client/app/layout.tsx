@@ -7,6 +7,7 @@ import Footer from "@/components/Footer";
 import 'react-toastify/dist/ReactToastify.css';
 import { ToastContainer } from "react-toastify";
 import { LanguageProvider } from "@/context/LanguageContext";
+import { LoginGateProvider } from "@/context/LoginGateContext";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -35,23 +36,23 @@ export default function RootLayout({
       </head>
       <body className="min-h-full flex flex-col bg-gray-50 text-gray-900">
         <LanguageProvider>
-          {/* 💡 Fixed: Wrapping with LanguageProvider */}
-          <div className="flex flex-col min-h-screen justify-between">
-            <Navbar />
+          <LoginGateProvider>
+            <div className="flex flex-col min-h-screen justify-between">
+              <Navbar />
 
-            {/* Main content page injection area */}
-            <main className="grow">
-              {children}
-            </main>
+              <main className="grow">
+                {children}
+              </main>
 
-            <ToastContainer
-              position="top-right"
-              autoClose={3000}
-              theme="dark"
-            />
+              <ToastContainer
+                position="top-right"
+                autoClose={3000}
+                theme="dark"
+              />
 
-            <Footer />
-          </div>
+              <Footer />
+            </div>
+          </LoginGateProvider>
         </LanguageProvider>
       </body>
     </html>

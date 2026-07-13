@@ -1,6 +1,6 @@
 'use client';
 import axios from 'axios';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import Script from 'next/script';
 import { toast } from 'react-toastify';
@@ -25,6 +25,38 @@ export default function ResumeForm() {
     experience: '1 month Web dev',
   });
   const [existingFile, setExistingFile] = useState(null); // optional resume upload
+
+  // ---- ref for the resume card we screenshot on download ----
+  const helloBoxRef = useRef(null);
+
+  // ---- Download resume function ----
+  const download = async () => {
+    if (!helloBoxRef.current) return;
+
+    try {
+      setLoading(true);
+
+      const html2canvas = (await import('html2canvas-pro')).default;
+
+      const canvas = await html2canvas(helloBoxRef.current, {
+        scale: 10,
+        backgroundColor: '#ffffff',
+      });
+
+      const imageURL = canvas.toDataURL('image/png');
+
+      const link = document.createElement('a');
+      link.href = imageURL;
+      link.download = 'resume-ai.png';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    } catch (error) {
+      console.log(error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   // ---- auth / subscription / resume state ----
   const [authUser, setAuthUser] = useState(null);
@@ -278,7 +310,7 @@ export default function ResumeForm() {
       {!isPremium ? (
         // 1) Not a premium user -> ask them to subscribe
         <div className="max-w-xl mx-auto my-12 bg-white rounded-2xl shadow-xl border border-gray-100 overflow-hidden font-sans mt-40">
-          <div className="bg-linear-to-r from-indigo-600 to-purple-600 p-6 text-white text-center relative">
+          <div className="bg-gradient-to-r from-indigo-600 to-purple-600 p-6 text-white text-center relative">
             <div className="absolute top-4 right-4 bg-white/20 backdrop-blur-md px-3 py-1 rounded-full text-xs font-semibold tracking-wide flex items-center gap-1">
               <Sparkles className="w-3.5 h-3.5 text-yellow-300" /> {t('resume.premiumFeature') || 'Premium Feature'}
             </div>
@@ -307,147 +339,153 @@ export default function ResumeForm() {
         </div>
       ) : hasResume ? (
         // 2) Premium user who already created a resume -> show it (with edit option)
-        <div className="max-w-4xl mx-auto my-12 bg-white rounded-2xl shadow-xl border border-gray-100 overflow-hidden font-sans mt-40">
-          <div className="bg-linear-to-r from-indigo-600 to-purple-600 p-8 text-white relative">
-            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-              <div>
-                <h1 className="text-3xl font-bold tracking-tight">{resumeData?.name}</h1>
-                <div className="text-indigo-100 text-sm mt-2 flex flex-wrap gap-4 items-center">
-                  <span className="flex items-center gap-1.5">
-                    <Mail className="w-4 h-4 text-indigo-200" /> {resumeData?.email}
-                  </span>
-                  <span className="flex items-center gap-1.5">
-                    <Phone className="w-4 h-4 text-indigo-200" /> {resumeData?.phone}
-                  </span>
+        <div>
+
+          <div ref={helloBoxRef} className="max-w-4xl mx-auto my-12 bg-white shadow-xl border border-gray-100 overflow-hidden font-sans mt-40">
+            <div className="bg-gradient-to-r from-indigo-600 to-purple-600 p-8 text-white relative">
+              <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                <div>
+                  <h1 className="text-3xl font-bold tracking-tight">{resumeData?.name}</h1>
+                  <div className="text-indigo-100 text-sm mt-2 flex flex-wrap gap-4 items-center">
+                    <span className="flex items-center gap-1.5">
+                      <Mail className="w-4 h-4 text-indigo-200" /> {resumeData?.email}
+                    </span>
+                    <span className="flex items-center gap-1.5">
+                      <Phone className="w-4 h-4 text-indigo-200" /> {resumeData?.phone}
+                    </span>
+                  </div>
                 </div>
-              </div>
-              <div className="flex items-center gap-2 self-stretch md:self-auto">
-                {!isEditingResume && (
-                  <button
-                    onClick={startEditingResume}
-                    className="bg-white/20 hover:bg-white/30 backdrop-blur-md px-4 py-2 rounded-xl text-xs font-semibold tracking-wide flex items-center gap-1.5 transition"
-                  >
-                    <Pencil className="w-3.5 h-3.5" /> {t('resume.editResume') || 'Edit'}
-                  </button>
-                )}
-                <div className="bg-white/20 backdrop-blur-md px-4 py-2 rounded-xl text-xs font-semibold tracking-wide flex items-center gap-1.5 justify-center">
-                  <Sparkles className="w-4 h-4 text-yellow-300 animate-pulse" /> {t('resume.aiOptimizedBadge') || 'AI Optimized Template'}
+                <div className="flex items-center gap-2 self-stretch md:self-auto">
+                  {!isEditingResume && (
+                    <button
+                      onClick={startEditingResume}
+                      className="bg-white/20 hover:bg-white/30 backdrop-blur-md px-4 py-2 rounded-xl text-xs font-semibold tracking-wide flex items-center gap-1.5 transition"
+                    >
+                      <Pencil className="w-3.5 h-3.5" /> {t('resume.editResume') || 'Edit'}
+                    </button>
+                  )}
+                  <div className="bg-white/20 backdrop-blur-md px-4 py-2 rounded-xl text-xs font-semibold tracking-wide flex items-center gap-1.5 justify-center">
+                    <Sparkles className="w-4 h-4 text-yellow-300 animate-pulse" /> {t('resume.aiOptimizedBadge') || 'AI Optimized Template'}
+                  </div>
                 </div>
               </div>
             </div>
+
+            <div className="p-8 space-y-8">
+              {isEditingResume ? (
+                // ── Edit form ──
+                <div className="space-y-5">
+                  <h2 className="text-sm font-bold text-gray-800">{t('resume.editResumeTitle') || 'Edit Your Resume'}</h2>
+
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-1.5">{t('resume.fullName') || 'Full Name'}</label>
+                    <div className="relative">
+                      <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                      <input
+                        type="text" name="name" value={editForm.name} onChange={handleEditChange}
+                        className="w-full pl-10 pr-4 py-2.5 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 text-gray-800 transition-all text-sm"
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-1.5">{t('resume.phoneNumber') || 'Phone Number'}</label>
+                    <div className="relative">
+                      <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                      <input
+                        type="text" name="phone" value={editForm.phone} onChange={handleEditChange}
+                        className="w-full pl-10 pr-4 py-2.5 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 text-gray-800 transition-all text-sm"
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-1.5">{t('resume.qualifications') || 'Qualifications'}</label>
+                    <div className="relative">
+                      <GraduationCap className="absolute left-3 top-3.5 w-4 h-4 text-gray-400" />
+                      <textarea
+                        name="qualifications" value={editForm.qualifications} onChange={handleEditChange} rows={2}
+                        className="w-full pl-10 pr-4 py-2.5 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 text-gray-800 transition-all text-sm resize-none"
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-1.5">{t('resume.experienceDetails') || 'Experience Details'}</label>
+                    <div className="relative">
+                      <Briefcase className="absolute left-3 top-3.5 w-4 h-4 text-gray-400" />
+                      <textarea
+                        name="experience" value={editForm.experience} onChange={handleEditChange} rows={3}
+                        className="w-full pl-10 pr-4 py-2.5 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 text-gray-800 transition-all text-sm resize-none"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="flex gap-3 pt-2">
+                    <button
+                      onClick={handleSaveResumeEdit}
+                      disabled={savingEdit}
+                      className="flex-1 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white py-2.5 rounded-xl font-medium text-sm flex items-center justify-center gap-2 transition"
+                    >
+                      {savingEdit ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+                      {savingEdit ? (t('resume.saving') || 'Saving...') : (t('resume.saveChanges') || 'Save Changes')}
+                    </button>
+                    <button
+                      onClick={() => setIsEditingResume(false)}
+                      disabled={savingEdit}
+                      className="flex items-center justify-center gap-2 border border-gray-200 text-gray-600 hover:bg-gray-50 py-2.5 px-5 rounded-xl font-medium text-sm transition"
+                    >
+                      <X className="w-4 h-4" /> {t('resume.cancelEdit') || 'Cancel'}
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                // ── Read-only view ──
+                <>
+                  <div className="space-y-3">
+                    <h2 className="text-xs font-bold uppercase tracking-wider text-indigo-600 flex items-center gap-2 border-b border-gray-100 pb-2">
+                      <GraduationCap className="w-4 h-4" /> {t('resume.qualificationsSectionTitle') || 'Educational Qualifications'}
+                    </h2>
+                    <div className="bg-gray-50/60 p-5 rounded-xl border border-gray-100/80">
+                      <p className="text-gray-700 text-sm leading-relaxed font-medium">
+                        {resumeData?.qualifications}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="space-y-3">
+                    <h2 className="text-xs font-bold uppercase tracking-wider text-indigo-600 flex items-center gap-2 border-b border-gray-100 pb-2">
+                      <Briefcase className="w-4 h-4" /> {t('resume.experienceSectionTitle') || 'Professional Experience'}
+                    </h2>
+                    <div className="bg-gray-50/60 p-5 rounded-xl border border-gray-100/80">
+                      <p className="text-gray-700 text-sm leading-relaxed whitespace-pre-line">
+                        {resumeData?.experience}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="pt-6 flex flex-col sm:flex-row items-center justify-between gap-4 border-t border-gray-100 text-xs text-gray-400">
+                    <p className="flex items-center gap-1.5">
+                      <ShieldCheck className="w-4 h-4 text-emerald-500" /> {t('resume.generatedSecurely') || 'Generated securely via Intern Area AI Engine'}
+                    </p>
+                    <button
+                      onClick={download}
+                      className="w-full sm:w-auto bg-indigo-50 hover:bg-indigo-100 text-indigo-600 font-medium py-2.5 px-4 rounded-xl transition-all flex items-center justify-center gap-2 text-sm">
+                      <Download className="w-4 h-4" /> {t('resume.downloadPdf') || 'Download PDF'}
+                    </button>
+                  </div>
+                </>
+              )}
+            </div>
           </div>
 
-          <div className="p-8 space-y-8">
-            {isEditingResume ? (
-              // ── Edit form ──
-              <div className="space-y-5">
-                <h2 className="text-sm font-bold text-gray-800">{t('resume.editResumeTitle') || 'Edit Your Resume'}</h2>
-
-                <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-1.5">{t('resume.fullName') || 'Full Name'}</label>
-                  <div className="relative">
-                    <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-                    <input
-                      type="text" name="name" value={editForm.name} onChange={handleEditChange}
-                      className="w-full pl-10 pr-4 py-2.5 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 text-gray-800 transition-all text-sm"
-                    />
-                  </div>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-1.5">{t('resume.phoneNumber') || 'Phone Number'}</label>
-                  <div className="relative">
-                    <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-                    <input
-                      type="text" name="phone" value={editForm.phone} onChange={handleEditChange}
-                      className="w-full pl-10 pr-4 py-2.5 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 text-gray-800 transition-all text-sm"
-                    />
-                  </div>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-1.5">{t('resume.qualifications') || 'Qualifications'}</label>
-                  <div className="relative">
-                    <GraduationCap className="absolute left-3 top-3.5 w-4 h-4 text-gray-400" />
-                    <textarea
-                      name="qualifications" value={editForm.qualifications} onChange={handleEditChange} rows={2}
-                      className="w-full pl-10 pr-4 py-2.5 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 text-gray-800 transition-all text-sm resize-none"
-                    />
-                  </div>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-1.5">{t('resume.experienceDetails') || 'Experience Details'}</label>
-                  <div className="relative">
-                    <Briefcase className="absolute left-3 top-3.5 w-4 h-4 text-gray-400" />
-                    <textarea
-                      name="experience" value={editForm.experience} onChange={handleEditChange} rows={3}
-                      className="w-full pl-10 pr-4 py-2.5 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 text-gray-800 transition-all text-sm resize-none"
-                    />
-                  </div>
-                </div>
-
-                <div className="flex gap-3 pt-2">
-                  <button
-                    onClick={handleSaveResumeEdit}
-                    disabled={savingEdit}
-                    className="flex-1 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white py-2.5 rounded-xl font-medium text-sm flex items-center justify-center gap-2 transition"
-                  >
-                    {savingEdit ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
-                    {savingEdit ? (t('resume.saving') || 'Saving...') : (t('resume.saveChanges') || 'Save Changes')}
-                  </button>
-                  <button
-                    onClick={() => setIsEditingResume(false)}
-                    disabled={savingEdit}
-                    className="flex items-center justify-center gap-2 border border-gray-200 text-gray-600 hover:bg-gray-50 py-2.5 px-5 rounded-xl font-medium text-sm transition"
-                  >
-                    <X className="w-4 h-4" /> {t('resume.cancelEdit') || 'Cancel'}
-                  </button>
-                </div>
-              </div>
-            ) : (
-              // ── Read-only view ──
-              <>
-                <div className="space-y-3">
-                  <h2 className="text-xs font-bold uppercase tracking-wider text-indigo-600 flex items-center gap-2 border-b border-gray-100 pb-2">
-                    <GraduationCap className="w-4 h-4" /> {t('resume.qualificationsSectionTitle') || 'Educational Qualifications'}
-                  </h2>
-                  <div className="bg-gray-50/60 p-5 rounded-xl border border-gray-100/80">
-                    <p className="text-gray-700 text-sm leading-relaxed font-medium">
-                      {resumeData?.qualifications}
-                    </p>
-                  </div>
-                </div>
-
-                <div className="space-y-3">
-                  <h2 className="text-xs font-bold uppercase tracking-wider text-indigo-600 flex items-center gap-2 border-b border-gray-100 pb-2">
-                    <Briefcase className="w-4 h-4" /> {t('resume.experienceSectionTitle') || 'Professional Experience'}
-                  </h2>
-                  <div className="bg-gray-50/60 p-5 rounded-xl border border-gray-100/80">
-                    <p className="text-gray-700 text-sm leading-relaxed whitespace-pre-line">
-                      {resumeData?.experience}
-                    </p>
-                  </div>
-                </div>
-
-                <div className="pt-6 flex flex-col sm:flex-row items-center justify-between gap-4 border-t border-gray-100 text-xs text-gray-400">
-                  <p className="flex items-center gap-1.5">
-                    <ShieldCheck className="w-4 h-4 text-emerald-500" /> {t('resume.generatedSecurely') || 'Generated securely via Intern Area AI Engine'}
-                  </p>
-                  <button className="w-full sm:w-auto bg-indigo-50 hover:bg-indigo-100 text-indigo-600 font-medium py-2.5 px-4 rounded-xl transition-all flex items-center justify-center gap-2 text-sm">
-                    <Download className="w-4 h-4" /> {t('resume.downloadPdf') || 'Download PDF'}
-                  </button>
-                </div>
-              </>
-            )}
-          </div>
         </div>
       ) : (
         // 3) Premium user, no resume yet -> create resume flow
         <div className="max-w-xl mx-auto my-12 bg-white rounded-2xl shadow-xl border border-gray-100 overflow-hidden font-sans mt-40">
           <Script src="https://checkout.razorpay.com/v1/checkout.js" strategy="lazyOnload" />
 
-          <div className="bg-linear-to-r from-indigo-600 to-purple-600 p-6 text-white text-center relative">
+          <div className="bg-gradient-to-r from-indigo-600 to-purple-600 p-6 text-white text-center relative">
             <div className="absolute top-4 right-4 bg-white/20 backdrop-blur-md px-3 py-1 rounded-full text-xs font-semibold tracking-wide flex items-center gap-1">
               <Sparkles className="w-3.5 h-3.5 text-yellow-300" /> {t('resume.premiumFeature') || 'Premium Feature'}
             </div>

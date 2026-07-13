@@ -3,7 +3,6 @@ import communityModel from '../models/communityPostModel.js';
 
 const router = Router();
 
-// Toggle like on a post
 router.post('/like/:postId', async (req, res) => {
     try {
         const { postId } = req.params;
@@ -36,7 +35,6 @@ router.post('/like/:postId', async (req, res) => {
     }
 });
 
-// Add a comment to a post
 router.post('/comment/:postId', async (req, res) => {
     try {
         const { postId } = req.params;
@@ -69,7 +67,6 @@ router.post('/comment/:postId', async (req, res) => {
     }
 });
 
-// Increment share count on a post
 router.post('/share/:postId', async (req, res) => {
     try {
         const { postId } = req.params;

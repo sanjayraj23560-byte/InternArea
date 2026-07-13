@@ -24,7 +24,8 @@
     "node-cron": "^4.5.0",
     "nodemailer": "^9.0.1",
     "nodemon": "^3.1.14",
-    "razorpay": "^2.9.6"
+    "razorpay": "^2.9.6",
+    "ua-parser-js": "^2.0.10"
   },
   "devDependencies": {
     "@types/multer": "^2.1.0"

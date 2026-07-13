@@ -129,14 +129,6 @@ function Settings() {
                         <h2 className="text-xl font-semibold mb-5">
                             <Lock size={18} /> Security
                         </h2>
-
-                        <div className="flex flex-col gap-3">
-
-                            <button onClick={() => router.push('/forgot-password')} className="bg-indigo-600 text-white py-2 rounded-lg hover:bg-indigo-700">
-                                Change Password
-                            </button>
-
-                        </div>
                     </div>
 
                     {/* Save */}

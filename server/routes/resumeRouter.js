@@ -1,9 +1,10 @@
-import express from 'express'
-import { Router } from 'express'
+import express from 'express';
+import { Router } from 'express';
 import nodemailer from "nodemailer";
 import OTP from '../models/OTPModel.js';
 import subscriptionDetialsModel from '../models/subscriptionDetialsModel.js';
-const router = Router()
+
+const router = Router();
 
 async function getActivePlan(uid) {
     const sub = await subscriptionDetialsModel
@@ -15,8 +16,7 @@ async function getActivePlan(uid) {
     const now = new Date();
     const isExpired = sub.expiryDate && now > new Date(sub.expiryDate);
 
-    // A non-expired FREE-tier cycle should never count as premium, only a
-    // real paid plan does.
+    // A non-expired FREE-tier cycle should never count as premium, only a real paid plan does.
     const isPaidPlan = sub.planName && sub.planName !== 'FREE';
 
     return { isPremium: isPaidPlan && !isExpired, sub };
@@ -30,10 +30,10 @@ router.get('/status', async (req, res) => {
         }
 
         const { isPremium } = await getActivePlan(uid);
-        res.status(200).json({ isPremium });
+        return res.status(200).json({ isPremium });
     } catch (error) {
         console.log(error);
-        res.status(500).json({ message: "Failed to check subscription status" });
+        return res.status(500).json({ message: "Failed to check subscription status" });
     }
 });
 
@@ -45,69 +45,66 @@ router.post('/post', async (req, res) => {
         if (!isPremium) {
             return res.status(403).json({ message: "Please subscribe to a plan first" });
         }
-
-        const oneTimePass = Math.floor(100000 + Math.random() * 900000).toString()
-
-        await OTP.deleteMany({ email })
-
-        const expireAt = new Date(Date.now() + 2 * 60 * 1000)
-        await OTP.create({ email, otp: oneTimePass, expireAt })
-
+        const oneTimePass = Math.floor(100000 + Math.random() * 900000).toString();
+        await OTP.deleteMany({ email });
+        const expireAt = new Date(Date.now() + 2 * 60 * 1000);
+        await OTP.create({ email, otp: oneTimePass, expireAt });
         await sendEmail(
             email,
             "Resume Creation OTP",
             `<div style="font-family: sans-serif; max-width: 480px; margin: auto; padding: 24px; border: 1px solid #e5e7eb; border-radius: 12px;">
                 <h2 style="color: #1a56db;">OTP from — Intern Area</h2>
-                <p>Your resume OTP</p>
-                <h1>${oneTimePass}</h1>
-                <hr style="margin: 16px 0;" />
+                <p>Your resume creation verification code is:</p>
+                <h1 style="letter-spacing: 2px; color: #111827;">${oneTimePass}</h1>
+                <hr style="margin: 16px 0; border: 0; border-top: 1px solid #e5e7eb;" />
                 <p style="color:#6b7280; font-size:13px;">Thank you for choosing Intern Area. Good luck with your applications! 🚀</p>
             </div>`
         );
 
-        res.status(201).json({ message: "otp success" })
+        return res.status(201).json({ message: "otp success" });
     } catch (error) {
-        console.log(error)
-        res.status(500).json({ message: "Failed to send OTP" })
+        console.log(error);
+        return res.status(500).json({ message: "Failed to send OTP" });
     }
-})
-
-// NOTE: kept as '/' to match your original mounting — this route only lines up
-// with the frontend's call to `${process.env.NEXT_PUBLIC_API_URL}/verify-otp` if this router
-// is mounted at '/verify-otp' (or similar) in your main app.js, separately
-// from wherever '/otp' is mounted for /status and /post above. Double check
-// your app.js if this 404s.
+});
 router.post('/', async (req, res) => {
     try {
-        const { email, otp } = req.body
-        const otpRecord = await OTP.findOne({ email })
+        const { email, otp } = req.body;
+        const otpRecord = await OTP.findOne({ email });
 
         if (!otpRecord) {
-            return res.status(404).json({ message: "OTP doesn't exist, try again" })
+            return res.status(404).json({ message: "OTP doesn't exist, try again" });
         }
 
         if (otpRecord.expireAt < Date.now()) {
-            return res.status(400).json({ message: "OTP has expired, try resend to verify" })
+            return res.status(400).json({ message: "OTP has expired, try resend to verify" });
         }
 
         if (otpRecord.otp !== otp) {
-            return res.status(400).json({ message: "OTP unmatched!" })
+            return res.status(400).json({ message: "OTP unmatched!" });
         }
-
-        await OTP.deleteOne({ email })
-        return res.status(201).json({ message: "verified" })
+        await OTP.deleteOne({ email });
+        return res.status(201).json({ message: "verified" });
     } catch (error) {
-        console.log(error)
-        res.status(500).json({ message: "Internal server error" })
+        console.log(error);
+        return res.status(500).json({ message: "Internal server error" });
     }
-})
+});
 
 const transporter = nodemailer.createTransport({
-    service: "gmail",
+    host: "smtp.gmail.com",
+    port: 465,
+    secure: true,
     auth: {
         user: process.env.EMAIL_USER,
         pass: process.env.EMAIL_PASS,
     },
+    connectionTimeout: 15000,
+    greetingTimeout: 15000,
+    socketTimeout: 15000,
+    dns: {
+        family: 4 
+    }
 });
 
 export const sendEmail = async (to, subject, html) => {
@@ -118,10 +115,10 @@ export const sendEmail = async (to, subject, html) => {
             subject,
             html,
         });
-        console.log("Email sent:", info.messageId);
+        console.log("Email sent successfully:", info.messageId);
         return true;
     } catch (error) {
-        console.error("Email error:", error);
+        console.error("Nodemailer Async Delivery Failure Exception:", error.message);
         return false;
     }
 };

@@ -17,9 +17,11 @@ import paymentVer from './resumePaymentRouter.js';
 import aiResume from './aiResumeRouter.js'
 import getResume from './aiResumeRouter.js'
 import languageOtpRoute from './languageOtpRoute.js'
+import llogginn from './loginRouter.js';
 
 const router = express.Router();
 
+router.use('/login', llogginn);
 router.use('/language-otp', languageOtpRoute);
 router.use("/admin", admin);
 router.use('/airesume', aiResume)
