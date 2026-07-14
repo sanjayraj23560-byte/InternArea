@@ -298,7 +298,7 @@
     "currentPlanBtn": "Current Plan",
     "pleaseLoginToast": "Please login first",
     "alreadyFreeToast": "You are already on the Free Plan",
-    "paymentWindowMessage": "Payments are only allowed between 8:00 AM – 10:00 PM IST",
+    "paymentWindowMessage": "Payments are only allowed between 10:00 AM – 11:00 AM IST",
     "paymentInitFailed": "Payment initiation failed",
     "membershipActivatedToast": "Membership Activated 🎉",
     "paymentVerifyFailed": "Payment verification failed ❌",

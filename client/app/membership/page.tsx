@@ -10,16 +10,15 @@ import { useLanguage } from '@/context/LanguageContext'
 import { CalendarClock, CheckCircle2 } from 'lucide-react'
 
 const isWithinPaymentWindow = (): boolean => {
-    return true
-    // const now = new Date()
-    // const ist = new Date(now.getTime() + 5.5 * 60 * 60 * 1000)
-    // const hours = ist.getUTCHours()
-    // const minutes = ist.getUTCMinutes()
-    // const total = hours * 60 + minutes
+    const now = new Date()
+    const ist = new Date(now.getTime() + 5.5 * 60 * 60 * 1000)
+    const hours = ist.getUTCHours()
+    const minutes = ist.getUTCMinutes()
+    const total = hours * 60 + minutes
 
-    // const windowStart = 10 * 60;
-    // const windowEnd = 11 * 60;  
-    // return total >= windowStart && total < windowEnd
+    const windowStart = 10 * 60;
+    const windowEnd = 11 * 60;  
+    return total >= windowStart && total < windowEnd
 }
 
 interface MembershipItem {
