@@ -7,8 +7,6 @@ import { toast } from 'react-toastify'
 
 interface DBApplication {
     _id: string;
-    company: string;
-    category: string;
     status: string;
     createdAt?: string;
     user: {
@@ -18,9 +16,11 @@ interface DBApplication {
     Application: {
         internshipId: string;
         title: string;
+        company: string;
         location: string;
-        stipend?: string;
-        duration?: string;
+        salary?: string;
+        experience?: string;
+        category?: string;
     };
 }
 
@@ -108,8 +108,8 @@ function Applications() {
                                         Role: {item.Application?.title || "Not Specified"}
                                     </h2>
                                     <span className={`ml-2 text-xs px-2.5 py-0.5 rounded-full font-medium ${item.status === 'Accepted' ? 'bg-green-100 text-green-700' :
-                                            item.status === 'Rejected' ? 'bg-red-100 text-red-700' :
-                                                'bg-amber-100 text-amber-700'
+                                        item.status === 'Rejected' ? 'bg-red-100 text-red-700' :
+                                            'bg-amber-100 text-amber-700'
                                         }`}>
                                         {item.status}
                                     </span>
@@ -117,7 +117,7 @@ function Applications() {
 
                                 <div className='flex items-center gap-2.5'>
                                     <Building2 size={16} className="text-gray-400 shrink-0" />
-                                    <span>Company: <span className="font-medium text-gray-800">{item.company}</span></span>
+                                    <span>Company: <span className="font-medium text-gray-800">{item.Application?.company || "Not Specified"}</span></span>
                                 </div>
 
                                 <div className='flex items-center gap-2.5'>

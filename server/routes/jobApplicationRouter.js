@@ -11,9 +11,9 @@ import {
 const jobApplicationSchema = new mongoose.Schema(
   {
     Application: {
-      internshipId: String, // kept as internshipId for compatibility with
-      title: String,        // the shared "already applied" check used by
-      company: String,      // both internship and job detail pages
+      internshipId: String, 
+      title: String,        
+      company: String,      
       location: String,
       salary: String,
       experience: String,
@@ -22,6 +22,11 @@ const jobApplicationSchema = new mongoose.Schema(
     user: {
       uid: String,
       email: String,
+    },
+    status: {
+      type: String,
+      enum: ["Pending", "Accepted", "Rejected"],
+      default: "Pending",
     },
   },
   { timestamps: true }
@@ -67,6 +72,41 @@ router.post("/", async (req, res) => {
     await incrementApplicationUsage(subscriptionId);
 
     return res.status(201).json({ success: true, data: application });
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ message: "Internal server error" });
+  }
+});
+
+router.get("/admin", async (req, res) => {
+  try {
+    const applications = await JobApplicationModel.find().sort({ createdAt: -1 });
+    return res.status(200).json(applications);
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ message: "Internal server error" });
+  }
+});
+
+// ── Update application status (Accept/Reject) ───────────────────────────────
+router.put("/:id/status", async (req, res) => {
+  try {
+    const { status } = req.body;
+    if (!["Accepted", "Rejected", "Pending"].includes(status)) {
+      return res.status(400).json({ message: "Invalid status value" });
+    }
+
+    const updated = await JobApplicationModel.findByIdAndUpdate(
+      req.params.id,
+      { status },
+      { new: true }
+    );
+
+    if (!updated) {
+      return res.status(404).json({ message: "Application not found" });
+    }
+
+    return res.status(200).json({ success: true, data: updated });
   } catch (error) {
     console.error(error);
     return res.status(500).json({ message: "Internal server error" });
